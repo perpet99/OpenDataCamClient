@@ -35,20 +35,31 @@ namespace App
 
         async Task<string> QueryToString(string url)
         {
-            using (var client = new HttpClient())
+            try
             {
-                using (var stream = await client.GetStreamAsync(url))
+                using (var client = new HttpClient())
                 {
-                    using (var reader = new StreamReader(stream))
+                    using (var stream = await client.GetStreamAsync(url))
                     {
+                        using (var reader = new StreamReader(stream))
                         {
-                            var line = reader.ReadLine();
-                            listBox1.Items.Insert(0, line);
-                            return line;
+                            {
+                                var line = reader.ReadLine();
+                 //               listBox1.Items.Insert(0, line);
+                                Console.WriteLine(line);
+                                return line;
+                            }
                         }
                     }
                 }
+
             }
+            catch (Exception ex)
+            {
+
+                Console.WriteLine(ex.Message);
+            }
+            return string.Empty;
         }
 
         async Task<TResult> QueryToJson<TResult>(string url)
@@ -65,6 +76,8 @@ namespace App
         public class recordings
         { 
             public string _id { get; set; }
+            public object counterSummary { get; set; }
+            
         }
 
         public class recordings_result
@@ -186,12 +199,46 @@ namespace App
         {
             try
             {
-                var r = await QueryToJson<recordings_result>("http://172.19.88.167:8080/recordings?offset=0&limit=1");
+                var url = "192.168.0.15:8080";
+                var r = await QueryToJson<recordings_result>($"http://{url}/recordings?offset=0&limit=1");
 
-                var r2 = await QueryToString("http://172.19.88.167:8080/recording/" + r.recordings[0]._id + "/counter");
+                //{
+                //    var areas2 = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<MongoDB.Bson.BsonDocument>(r.recordings[0].counterSummary.ToString());
 
+                //    foreach (var item in areas2)
+                //    {
+                //        //if (item.Name == area)
+                //        {
+
+                //            //MongoDB.Bson.Serialization.BsonSerializer.Deserialize<areas>(item.Value);
+
+                //            var a = new areas();
+                //            Location location = new Location();
+                //            location.point1.x = item.Value["location"]["point1"]["x"].AsInt32;
+                //            location.point1.y = item.Value["location"]["point1"]["y"].AsInt32;
+
+                //            location.point2.x = item.Value["location"]["point2"]["x"].AsInt32;
+                //            location.point2.y = item.Value["location"]["point2"]["y"].AsInt32;
+
+                //            a.location = location;
+                //            a.type = item.Value["type"].AsString;
+                //            a.name = item.Value["name"].AsString;
+                //            //a.location.point1.x
+                            
+                //        }
+                //    }
+                //}
+
+                //return;
+                var r2 = await QueryToString($"http://{url}/recording/" + r.recordings[0]._id + "/counter");
+
+                if (r2 == string.Empty)
+                    return;
 
                 var counter_result = JsonSerializer.Deserialize<counter_result>(r2);
+
+
+                //return;
 
                 //var jsonDoc = Newtonsoft.Json.JsonConvert.SerializeObject(r3.areas.ToString());
                 var areas = MongoDB.Bson.Serialization.BsonSerializer.Deserialize<MongoDB.Bson.BsonDocument>(counter_result.areas.ToString());
@@ -203,11 +250,14 @@ namespace App
                     {
                         _FindCars.Add(item.id, item);
 
-                        listBox1.Items.Insert(0, "event car : "+ item.id.ToString());
+
+                        
+
+                        listBox1.Items.Insert(0, $"event car ({_FindCars.Values.Where(item2=>item2.area == item.area).Count() }) : {item.id.ToString()}" );
 
                         var a = GetArea(areas, item.area);
 
-                        listBox1.Items.Insert(0, "event line : " + a.name);
+                        listBox1.Items.Insert(0, $"event line : {a.name}"  );
 
                     }
                     
@@ -248,11 +298,11 @@ namespace App
 
                     var a = new areas();
                     Location location = new Location();
-                    location.point1.x = item.Value["location"]["point1"]["x"].AsInt32;
-                    location.point1.y = item.Value["location"]["point1"]["y"].AsInt32;
+                    //location.point1.x = item.Value["computed"]["point1"]["x"].AsInt32;
+                    //location.point1.y = item.Value["location"]["point1"]["y"].AsInt32;
 
-                    location.point2.x = item.Value["location"]["point2"]["x"].AsInt32;
-                    location.point2.y = item.Value["location"]["point2"]["y"].AsInt32;
+                    //location.point2.x = item.Value["location"]["point2"]["x"].AsInt32;
+                    //location.point2.y = item.Value["location"]["point2"]["y"].AsInt32;
 
                     a.location = location;
                     a.type = item.Value["type"].AsString;
